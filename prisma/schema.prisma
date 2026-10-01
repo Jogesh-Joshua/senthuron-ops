@@ -1,0 +1,108 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum EnquirySource {
+  WHATSAPP
+  INSTAGRAM
+  EMAIL
+  WEBSITE
+  REFERRAL
+  DIRECT
+  OTHER
+}
+
+enum ServiceType {
+  WEB_DEVELOPMENT
+  MOBILE_APP
+  UI_UX_DESIGN
+  CUSTOM_SOFTWARE
+  MAINTENANCE_SUPPORT
+  CONSULTING
+  OTHER
+}
+
+enum ActivityType {
+  CREATED
+  STATUS_CHANGED
+  FOLLOW_UP_CHANGED
+  ASSIGNEE_CHANGED
+  DETAILS_UPDATED
+}
+
+model TeamMember {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  email     String?
+  createdAt DateTime  @default(now())
+  enquiries Enquiry[]
+
+  @@map("team_members")
+}
+
+model Enquiry {
+  id            String        @id @default(cuid())
+  number        Int           @unique @default(autoincrement())
+
+  clientName    String
+  contactPerson String
+  email         String?
+  phone         String?
+  phoneDigits   String?       // digits only, derived on write, used for phone search
+
+  source        EnquirySource
+  service       ServiceType
+  description   String
+  budget        Int?          // whole currency units
+
+  status        EnquiryStatus @default(NEW)
+  assignedToId  String?
+  assignedTo    TeamMember?   @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  nextFollowUpAt DateTime?    @db.Date
+  notes         String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  activities    EnquiryActivity[]
+
+  @@index([status])
+  @@index([source])
+  @@index([assignedToId])
+  @@index([nextFollowUpAt])
+  @@index([updatedAt])
+  @@index([status, nextFollowUpAt])
+  @@map("enquiries")
+}
+
+model EnquiryActivity {
+  id        String       @id @default(cuid())
+  enquiryId String
+  enquiry   Enquiry      @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  type      ActivityType
+  fromValue String?      // machine value: enum key, ISO date, or name
+  toValue   String?
+  note      String?      // e.g. closing note, or changed field names
+  createdAt DateTime     @default(now())
+
+  @@index([enquiryId, createdAt])
+  @@index([createdAt])
+  @@map("enquiry_activities")
+}
