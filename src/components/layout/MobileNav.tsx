@@ -3,6 +3,7 @@
 // Mobile top bar + bottom tab bar. Client because it reads pathname.
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export function MobileNav() {
@@ -20,12 +21,7 @@ export function MobileNav() {
       {/* Top bar */}
       <header className="mobile-topbar" aria-label="App header">
         <Link href="/" className="mobile-wordmark" aria-label="Senthuron Ops — Dashboard">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <rect x="1" y="1" width="18" height="18" rx="2" stroke="var(--color-ink)" strokeWidth="1.5"/>
-            <line x1="4" y1="6" x2="16" y2="6" stroke="var(--color-ink)" strokeWidth="1.2"/>
-            <line x1="4" y1="10" x2="16" y2="10" stroke="var(--color-brand)" strokeWidth="1.5"/>
-            <line x1="4" y1="14" x2="16" y2="14" stroke="var(--color-ink)" strokeWidth="1.2"/>
-          </svg>
+          <Image src="/logo.svg" alt="Senthuron Logo" width={24} height={24} style={{ width: "auto", height: "auto" }} priority aria-hidden="true" />
           <span className="mobile-wordmark-text">Senthuron Ops</span>
         </Link>
         <Link href="/enquiries/new" className="btn-secondary btn-sm" aria-label="Create new enquiry">

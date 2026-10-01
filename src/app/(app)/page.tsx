@@ -10,8 +10,7 @@ import { getDashboardData } from "@/lib/services/dashboard.service";
 import { FollowUpChip } from "@/components/dashboard/FollowUpChip";
 import { StageMark } from "@/components/dashboard/StageMark";
 import { SOURCE_LABELS, STATUS_LABELS } from "@/lib/constants";
-import { relativeTime } from "@/lib/dates";
-import { formatCompactCurrency, formatCurrency } from "@/lib/format";
+import { formatCompactCurrency, getInitials } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -19,14 +18,7 @@ export const metadata: Metadata = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
-}
+
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -106,11 +98,11 @@ export default async function DashboardPage() {
       <div style={{ padding: "32px" }}>
         <div className="error-panel">
           <p className="error-panel-msg">
-            We couldn't load the dashboard. Please check your database connection and try again.
+            We couldn&apos;t load the dashboard. Please check your database connection and try again.
           </p>
-          <a href="/" className="btn-secondary btn-sm" style={{ alignSelf: "flex-start" }}>
+          <Link href="/" className="btn-secondary btn-sm" style={{ alignSelf: "flex-start" }}>
             Try again
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -215,7 +207,7 @@ export default async function DashboardPage() {
 
           {totalAttention === 0 ? (
             <div className="empty-block" style={{ padding: "32px 0", alignItems: "flex-start" }}>
-              <p className="empty-title" style={{ fontSize: "16px" }}>You're clear</p>
+              <p className="empty-title" style={{ fontSize: "16px" }}>You&apos;re clear</p>
               <p className="empty-body">No overdue or unscheduled enquiries right now.</p>
             </div>
           ) : (

@@ -19,7 +19,9 @@ export function EnquiryFilters({ teamMembers }: EnquiryFiltersProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  function onChange() {
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  function applyFilters() {
     if (!formRef.current) return;
     const formData = new FormData(formRef.current);
     const params = new URLSearchParams(searchParams);
@@ -50,8 +52,17 @@ export function EnquiryFilters({ teamMembers }: EnquiryFiltersProps) {
 
     const queryString = params.toString();
     startTransition(() => {
-      router.push(`/enquiries${queryString ? `?${queryString}` : ""}`);
+      router.replace(`/enquiries${queryString ? `?${queryString}` : ""}`);
     });
+  }
+
+  function handleFormChange(e: React.ChangeEvent<HTMLFormElement>) {
+    if ((e.target as unknown as HTMLInputElement).name === "q") {
+      clearTimeout(timer.current);
+      timer.current = setTimeout(applyFilters, 300);
+    } else {
+      applyFilters();
+    }
   }
 
   const currentQ = searchParams.get("q") || "";
@@ -65,7 +76,7 @@ export function EnquiryFilters({ teamMembers }: EnquiryFiltersProps) {
       {/* Search progress line */}
       <div className="filters-progress" style={{ opacity: isPending ? 1 : 0 }} />
 
-      <form ref={formRef} className="filters-form" onChange={onChange} onSubmit={(e) => { e.preventDefault(); onChange(); }}>
+      <form ref={formRef} className="filters-form" onChange={handleFormChange} onSubmit={(e) => { e.preventDefault(); applyFilters(); }}>
         
         {/* Search */}
         <div className="filter-search">
@@ -85,14 +96,14 @@ export function EnquiryFilters({ teamMembers }: EnquiryFiltersProps) {
 
         {/* Filters */}
         <div className="filter-group">
-          <select name="source" value={currentSource} onChange={onChange} className="filter-select" aria-label="Filter by source">
+          <select name="source" value={currentSource} onChange={() => {}} className="filter-select" aria-label="Filter by source">
             <option value="ALL">Source</option>
             {Object.entries(SOURCE_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
             ))}
           </select>
 
-          <select name="assignee" value={currentAssignee} onChange={onChange} className="filter-select" aria-label="Filter by assignee">
+          <select name="assignee" value={currentAssignee} onChange={() => {}} className="filter-select" aria-label="Filter by assignee">
             <option value="ALL">Assigned</option>
             <option value="UNASSIGNED">Unassigned</option>
             {teamMembers.map((tm) => (
@@ -100,7 +111,7 @@ export function EnquiryFilters({ teamMembers }: EnquiryFiltersProps) {
             ))}
           </select>
 
-          <select name="due" value={currentDue} onChange={onChange} className="filter-select" aria-label="Filter by follow-up">
+          <select name="due" value={currentDue} onChange={() => {}} className="filter-select" aria-label="Filter by follow-up">
             <option value="ANY">Follow-up</option>
             {Object.entries(DUE_LABELS).filter(([val]) => val !== "ANY").map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
@@ -111,7 +122,7 @@ export function EnquiryFilters({ teamMembers }: EnquiryFiltersProps) {
         {/* Sort */}
         <div className="filter-sort">
           <span className="filter-sort-label">Sort:</span>
-          <select name="sort" value={currentSort} onChange={onChange} className="filter-select filter-select--sort" aria-label="Sort by">
+          <select name="sort" value={currentSort} onChange={() => {}} className="filter-select filter-select--sort" aria-label="Sort by">
             {Object.entries(SORT_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
             ))}

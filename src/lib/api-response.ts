@@ -4,7 +4,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { AppError } from "@/lib/errors";
+import { AppError, ForbiddenOriginError } from "@/lib/errors";
 
 interface ApiSuccess<T> {
   data: T;
@@ -29,9 +29,9 @@ export function fail(
   code: string,
   message: string,
   status: number,
-  fieldErrors?: Record<string, string[]>
+  fieldErrors?: Record<string, string[]>,
+  requestId = crypto.randomUUID().slice(0, 8)
 ): NextResponse<ApiError> {
-  const requestId = crypto.randomUUID().slice(0, 8);
   return NextResponse.json(
     { error: { code, message, ...(fieldErrors ? { fieldErrors } : {}), requestId } },
     { status, headers: noStore() }
@@ -77,10 +77,14 @@ export function withErrorHandling(handler: RouteHandler): RouteHandler {
       if (
         typeof err === "object" &&
         err !== null &&
-        "code" in err &&
-        (err as { code: string }).code === "P2025"
+        "code" in err
       ) {
-        return fail("NOT_FOUND", "Record not found.", 404);
+        if ((err as { code: string }).code === "P2025") {
+          return fail("NOT_FOUND", "Record not found.", 404);
+        }
+        if ((err as { code: string }).code === "P2003") {
+          return fail("VALIDATION_ERROR", "A referenced record no longer exists.", 422);
+        }
       }
 
       // Unexpected — log with request ID but return generic message
@@ -96,7 +100,9 @@ export function withErrorHandling(handler: RouteHandler): RouteHandler {
       return fail(
         "INTERNAL_ERROR",
         "Something went wrong. Please try again.",
-        500
+        500,
+        undefined,
+        requestId
       );
     }
   };
@@ -109,8 +115,26 @@ export function withErrorHandling(handler: RouteHandler): RouteHandler {
 export function assertSameOrigin(req: Request): void {
   const origin = req.headers.get("origin");
   const host = req.headers.get("host");
-  if (origin && host && !origin.endsWith(host)) {
-    const { ForbiddenOriginError } = require("@/lib/errors");
-    throw new ForbiddenOriginError();
+  if (origin && host) {
+    try {
+      if (new URL(origin).host !== host) {
+        throw new ForbiddenOriginError();
+      }
+    } catch (e) {
+      if (e instanceof ForbiddenOriginError) throw e;
+      throw new ForbiddenOriginError();
+    }
+  }
+}
+
+export async function readJson(req: Request): Promise<unknown> {
+  assertSameOrigin(req);
+  if (!(req.headers.get("content-type") ?? "").includes("application/json")) {
+    throw new AppError("UNSUPPORTED_MEDIA_TYPE", 415, "Request body must be application/json.");
+  }
+  try {
+    return await req.json();
+  } catch {
+    throw new AppError("BAD_REQUEST", 400, "Request body is not valid JSON.");
   }
 }

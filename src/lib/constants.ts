@@ -14,7 +14,7 @@ export const CURRENCY_CODE = "INR";
 /** Currency symbol shown in the UI */
 export const CURRENCY_SYMBOL = "₹";
 /** The business timezone for all "today" calculations */
-export const BUSINESS_TIMEZONE = process.env.APP_TIMEZONE ?? "Asia/Kolkata";
+export const BUSINESS_TIMEZONE = "Asia/Kolkata";
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ export const STATUS_ORDER: EnquiryStatus[] = [
 ];
 
 /** Human-readable labels for each status */
-export const STATUS_LABELS: Record<EnquiryStatus, string> = {
+export const STATUS_LABELS = {
   NEW: "New",
   CONTACTED: "Contacted",
   QUALIFIED: "Qualified",
@@ -55,11 +55,13 @@ export const STATUS_LABELS: Record<EnquiryStatus, string> = {
   NEGOTIATION: "Negotiation",
   WON: "Won",
   LOST: "Lost",
-};
+} satisfies Record<EnquiryStatus, string>;
+
+export const STATUS_VALUES = Object.keys(STATUS_LABELS) as [EnquiryStatus, ...EnquiryStatus[]];
 
 // ─── Source labels ────────────────────────────────────────────────────────────
 
-export const SOURCE_LABELS: Record<EnquirySource, string> = {
+export const SOURCE_LABELS = {
   WHATSAPP: "WhatsApp",
   INSTAGRAM: "Instagram",
   EMAIL: "Email",
@@ -67,11 +69,13 @@ export const SOURCE_LABELS: Record<EnquirySource, string> = {
   REFERRAL: "Referral",
   DIRECT: "Direct",
   OTHER: "Other",
-};
+} satisfies Record<EnquirySource, string>;
+
+export const SOURCE_VALUES = Object.keys(SOURCE_LABELS) as [EnquirySource, ...EnquirySource[]];
 
 // ─── Service labels ───────────────────────────────────────────────────────────
 
-export const SERVICE_LABELS: Record<ServiceType, string> = {
+export const SERVICE_LABELS = {
   WEB_DEVELOPMENT: "Web Development",
   MOBILE_APP: "Mobile App",
   UI_UX_DESIGN: "UI / UX Design",
@@ -79,7 +83,9 @@ export const SERVICE_LABELS: Record<ServiceType, string> = {
   MAINTENANCE_SUPPORT: "Maintenance & Support",
   CONSULTING: "Consulting",
   OTHER: "Other",
-};
+} satisfies Record<ServiceType, string>;
+
+export const SERVICE_VALUES = Object.keys(SERVICE_LABELS) as [ServiceType, ...ServiceType[]];
 
 // ─── Follow-up state ──────────────────────────────────────────────────────────
 

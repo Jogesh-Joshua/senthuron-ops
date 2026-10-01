@@ -26,28 +26,15 @@ export async function apiRequest<T>(
   url: string,
   options?: RequestInit
 ): Promise<ApiResult<T>> {
+  let res: Response;
   try {
-    const res = await fetch(url, {
+    res = await fetch(url, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
         ...options?.headers,
       },
-      ...options,
     });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      return {
-        ok: false,
-        error: json?.error ?? {
-          code: "UNKNOWN_ERROR",
-          message: "An unexpected error occurred.",
-        },
-      };
-    }
-
-    return { ok: true, data: json.data as T };
   } catch {
     const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
     return {
@@ -60,6 +47,31 @@ export async function apiRequest<T>(
       },
     };
   }
+
+  let json: unknown;
+  try {
+    json = await res.json();
+  } catch {
+    return {
+      ok: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Unexpected server response.",
+      },
+    };
+  }
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: ((json as { error?: unknown })?.error as ApiErrorResult["error"]) ?? {
+        code: "UNKNOWN_ERROR",
+        message: "An unexpected error occurred.",
+      },
+    };
+  }
+
+  return { ok: true, data: (json as { data: unknown }).data as T };
 }
 
 export function apiPost<T>(url: string, body: unknown): Promise<ApiResult<T>> {

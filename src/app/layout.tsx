@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   description:
     "Enquiry management for Senthuron Tech — track every opportunity from first contact to won or lost.",
   robots: { index: false }, // internal tool; do not index
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 // ─── Root layout ──────────────────────────────────────────────────────────────

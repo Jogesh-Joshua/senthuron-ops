@@ -4,8 +4,8 @@
 
 import "server-only";
 import { prisma } from "@/lib/db";
-import { OPEN_STATUSES, CLOSED_STATUSES } from "@/lib/constants";
-import { todayString, toDateOnly, computeFollowUpState, computeFollowUpDays } from "@/lib/dates";
+import { OPEN_STATUSES } from "@/lib/constants";
+import { todayString, toDateOnly } from "@/lib/dates";
 import { toEnquiryListItem } from "@/lib/mappers";
 import type { EnquiryListItem } from "@/types/dto";
 
@@ -123,6 +123,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     sourceGroups,
     workloadGroups,
     recentActivities,
+    wonBySource,
+    allMembers,
+    overdueByAssignee,
   ] = await Promise.all([
     // 1. Count of open enquiries
     prisma.enquiry.count({ where: { status: { in: OPEN_STATUSES } } }),
@@ -227,38 +230,34 @@ export async function getDashboardData(): Promise<DashboardData> {
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
+    // 16. Won count by source
+    prisma.enquiry.groupBy({
+      by: ["source"],
+      where: { status: "WON" },
+      _count: { _all: true },
+    }),
+
+    // 17. All team members (for workload names)
+    prisma.teamMember.findMany({
+      select: { id: true, name: true },
+    }),
+
+    // 18. Overdue count by assignee (for workload)
+    prisma.enquiry.groupBy({
+      by: ["assignedToId"],
+      where: {
+        status: { in: OPEN_STATUSES },
+        nextFollowUpAt: { lt: today },
+      },
+      _count: { _all: true },
+    }),
   ]);
 
-  // ── Won count by source (separate query — needed for source rows) ──────────
-  const wonBySource = await prisma.enquiry.groupBy({
-    by: ["source"],
-    where: { status: "WON" },
-    _count: { _all: true },
-  });
-
   // ── Assignee names for workload rows ─────────────────────────────────────
-  const assigneeIds = workloadGroups
-    .map((g) => g.assignedToId)
-    .filter((id): id is string => id !== null);
-
   const assigneeMap = new Map<string, string>();
-  if (assigneeIds.length > 0) {
-    const members = await prisma.teamMember.findMany({
-      where: { id: { in: assigneeIds } },
-      select: { id: true, name: true },
-    });
-    members.forEach((m) => assigneeMap.set(m.id, m.name));
-  }
+  allMembers.forEach((m) => assigneeMap.set(m.id, m.name));
 
   // ── Overdue count for each assignee (workload) ────────────────────────────
-  const overdueByAssignee = await prisma.enquiry.groupBy({
-    by: ["assignedToId"],
-    where: {
-      status: { in: OPEN_STATUSES },
-      nextFollowUpAt: { lt: today },
-    },
-    _count: { _all: true },
-  });
   const overdueAssigneeMap = new Map<string | null, number>();
   overdueByAssignee.forEach((g) => {
     overdueAssigneeMap.set(g.assignedToId, g._count._all);

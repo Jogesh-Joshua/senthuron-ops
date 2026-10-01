@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listEnquiries, getTeamMembers } from "@/lib/services/enquiry.service";
-import { listQuerySchema } from "@/lib/validation/enquiry";
+import { redirect } from "next/navigation";
+import { listEnquiries, listTeamMembers } from "@/lib/services/enquiry.service";
+import { parseListQuery } from "@/lib/validation/enquiry";
 import { StatusStrip } from "@/components/enquiries/StatusStrip";
 import { EnquiryFilters } from "@/components/enquiries/EnquiryFilters";
 import { EnquiryTable } from "@/components/enquiries/EnquiryTable";
@@ -14,13 +15,13 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 interface EnquiriesPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function EnquiriesPage({ searchParams }: EnquiriesPageProps) {
   // Parse query params safely
-  const queryParse = listQuerySchema.safeParse(searchParams);
-  const query = queryParse.success ? queryParse.data : listQuerySchema.parse({});
+  const raw = await searchParams;
+  const query = parseListQuery(raw);
 
   let data;
   let teamMembers;
@@ -29,7 +30,7 @@ export default async function EnquiriesPage({ searchParams }: EnquiriesPageProps
   try {
     [data, teamMembers] = await Promise.all([
       listEnquiries(query),
-      getTeamMembers()
+      listTeamMembers()
     ]);
   } catch (err) {
     console.error(JSON.stringify({ level: "error", page: "enquiries", message: String(err) }));
@@ -41,14 +42,22 @@ export default async function EnquiriesPage({ searchParams }: EnquiriesPageProps
       <div style={{ padding: "32px" }}>
         <div className="error-panel">
           <p className="error-panel-msg">
-            We couldn't load the enquiries. Please check your database connection and try again.
+            We couldn&apos;t load the enquiries. Please check your database connection and try again.
           </p>
-          <a href="/enquiries" className="btn-secondary btn-sm" style={{ alignSelf: "flex-start" }}>
+          <Link href="/enquiries" className="btn-secondary btn-sm" style={{ alignSelf: "flex-start" }}>
             Try again
-          </a>
+          </Link>
         </div>
       </div>
     );
+  }
+
+  if (data.total > 0 && data.items.length === 0 && query.page > 1) {
+    const params = new URLSearchParams(
+      Object.entries(raw).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))
+    );
+    params.set("page", String(data.totalPages));
+    redirect(`/enquiries?${params}`);
   }
 
   // Header display logic

@@ -8,40 +8,13 @@ import {
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
   OPEN_STATUSES,
+  STATUS_VALUES,
+  SOURCE_VALUES,
+  SERVICE_VALUES,
 } from "@/lib/constants";
 import { todayString } from "@/lib/dates";
 
 // ─── Enum sets (derived from constants so they cannot drift from the DB) ───────
-
-const STATUS_VALUES = [
-  "NEW",
-  "CONTACTED",
-  "QUALIFIED",
-  "PROPOSAL_SENT",
-  "NEGOTIATION",
-  "WON",
-  "LOST",
-] as const;
-
-const SOURCE_VALUES = [
-  "WHATSAPP",
-  "INSTAGRAM",
-  "EMAIL",
-  "WEBSITE",
-  "REFERRAL",
-  "DIRECT",
-  "OTHER",
-] as const;
-
-const SERVICE_VALUES = [
-  "WEB_DEVELOPMENT",
-  "MOBILE_APP",
-  "UI_UX_DESIGN",
-  "CUSTOM_SOFTWARE",
-  "MAINTENANCE_SUPPORT",
-  "CONSULTING",
-  "OTHER",
-] as const;
 
 // ─── Base field rules (§8.2) ──────────────────────────────────────────────────
 
@@ -78,7 +51,7 @@ export const enquiryFieldsSchema = z.object({
   budget: z
     .union([
       z.number().int("Enter a budget as a whole number.").min(0).max(999_999_999),
-      z.string().transform((v) => (v.trim() === "" ? null : parseInt(v, 10))),
+      z.string().transform((v) => (v.trim() === "" ? null : (/^\d{1,9}$/.test(v.trim()) ? Number(v) : Number.NaN))),
       z.null(),
     ])
     .optional()
@@ -133,6 +106,27 @@ export const createEnquirySchema = enquiryFieldsSchema
           path: ["nextFollowUpAt"],
         });
       }
+    }
+  });
+
+// Edit schema is identical to create, but permits past dates for follow-up
+export const editEnquirySchema = enquiryFieldsSchema
+  .extend({
+    status: z.enum(STATUS_VALUES).optional().default("NEW"),
+  })
+  .superRefine((data, ctx) => {
+    // email or phone required
+    if (!data.email && !data.phone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add an email or a phone number so you can reach them.",
+        path: ["email"],
+      });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add an email or a phone number so you can reach them.",
+        path: ["phone"],
+      });
     }
   });
 
@@ -193,13 +187,22 @@ export const listQuerySchema = z.object({
     .default(DEFAULT_PAGE_SIZE),
 });
 
+export function parseListQuery(raw: Record<string, string | string[] | undefined>): ListQuery {
+  const flat = Object.fromEntries(
+    Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
+  );
+  const result = listQuerySchema.safeParse(flat);
+  if (result.success) return result.data;
+  const bad = new Set(result.error.issues.map((i) => String(i.path[0])));
+  return listQuerySchema.parse(Object.fromEntries(Object.entries(flat).filter(([k]) => !bad.has(k))));
+}
+
 // ─── Inferred TypeScript types ────────────────────────────────────────────────
 
 export type CreateEnquiryInput = z.infer<typeof createEnquirySchema>;
 export type UpdateEnquiryInput = z.infer<typeof updateEnquirySchema>;
 export type ListQuery = z.infer<typeof listQuerySchema>;
-export type EnquiryStatus = (typeof STATUS_VALUES)[number];
-export type EnquirySource = (typeof SOURCE_VALUES)[number];
+export type { EnquiryStatus, EnquirySource, ServiceType } from "@/generated/prisma";
 
 // ─── Helper — used by the service to expand "OPEN" into individual statuses ───
 export { OPEN_STATUSES };

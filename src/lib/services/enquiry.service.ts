@@ -13,6 +13,7 @@ import {
   toEnquiryListItem,
   toEnquiryDetailDTO,
 } from "@/lib/mappers";
+import { extractDigits } from "@/lib/format";
 import type {
   CreateEnquiryInput,
   UpdateEnquiryInput,
@@ -20,7 +21,6 @@ import type {
 } from "@/lib/validation/enquiry";
 import type {
   EnquiryDTO,
-  EnquiryListItem,
   EnquiryDetailDTO,
   EnquiryListResponse,
   StatusCounts,
@@ -67,12 +67,10 @@ const ENQUIRY_DETAIL_SELECT = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function extractDigits(phone: string): string {
-  return phone.replace(/\D/g, "");
-}
+
 
 /** Builds the Prisma `where` clause from a validated list query. */
-function buildWhere(query: ListQuery): Prisma.EnquiryWhereInput {
+export function buildWhere(query: ListQuery): Prisma.EnquiryWhereInput {
   const where: Prisma.EnquiryWhereInput = {};
   const conditions: Prisma.EnquiryWhereInput[] = [];
 
@@ -322,23 +320,24 @@ export async function updateEnquiry(
   id: string,
   input: UpdateEnquiryInput
 ): Promise<EnquiryDTO> {
-  // Load current record
-  const current = await prisma.enquiry.findUnique({
-    where: { id },
-    select: {
-      ...ENQUIRY_SELECT,
-      assignedTo: { select: { id: true, name: true } },
-    },
-  });
+  const updatedRow = await prisma.$transaction(async (tx) => {
+    // Load current record
+    const current = await tx.enquiry.findUnique({
+      where: { id },
+      select: {
+        ...ENQUIRY_SELECT,
+        assignedTo: { select: { id: true, name: true } },
+      },
+    });
 
-  if (!current) {
-    throw new NotFoundError("Enquiry not found.");
-  }
+    if (!current) {
+      throw new NotFoundError("Enquiry not found.");
+    }
 
-  // Validate assignee exists (if changing)
-  let newAssigneeName: string | null = null;
-  if (input.assignedToId !== undefined && input.assignedToId !== null) {
-    const member = await prisma.teamMember.findUnique({
+    // Validate assignee exists (if changing)
+    let newAssigneeName: string | null = null;
+    if (input.assignedToId !== undefined && input.assignedToId !== null) {
+      const member = await tx.teamMember.findUnique({
       where: { id: input.assignedToId },
       select: { id: true, name: true },
     });
@@ -429,9 +428,8 @@ export async function updateEnquiry(
   const nextFollowUp = newFollowUpAt?.toISOString().slice(0, 10) ?? null;
   const followUpChangedManually =
     input.nextFollowUpAt !== undefined && prevFollowUp !== nextFollowUp;
-  const followUpClearedByStatus = isClosed && prevFollowUp !== null && input.nextFollowUpAt === undefined;
 
-  if (followUpChangedManually || followUpClearedByStatus) {
+  if (followUpChangedManually) {
     activitiesToCreate.push({
       enquiryId: id,
       type: "FOLLOW_UP_CHANGED",
@@ -468,9 +466,8 @@ export async function updateEnquiry(
     });
   }
 
-  // ─── Transactional write ──────────────────────────────────────────────────
+    // ─── Transactional write ──────────────────────────────────────────────────
 
-  const updatedRow = await prisma.$transaction(async (tx) => {
     const enquiry = await tx.enquiry.update({
       where: { id },
       data: updateData,

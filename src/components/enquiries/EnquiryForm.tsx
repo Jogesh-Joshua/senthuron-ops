@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createEnquirySchema } from "@/lib/validation/enquiry";
+import { createEnquirySchema, editEnquirySchema } from "@/lib/validation/enquiry";
 import { SOURCE_LABELS, SERVICE_LABELS, STATUS_LABELS } from "@/lib/constants";
-import type { z } from "zod";
+import { toast } from "sonner";
+import { apiPost, apiPatch } from "@/lib/api-client";
+import type { EnquiryDTO, EnquiryDetailDTO } from "@/types/dto";
 
 interface TeamMember {
   id: string;
@@ -13,9 +15,22 @@ interface TeamMember {
 
 interface EnquiryFormProps {
   teamMembers: TeamMember[];
+  mode?: "create" | "edit";
+  enquiry?: EnquiryDetailDTO;
 }
 
-export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
+function readForm(form: HTMLFormElement) {
+  const raw = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+  return {
+    ...raw,
+    budget: raw.budget?.trim() || null,
+    nextFollowUpAt: raw.nextFollowUpAt || null,
+    assignedToId: raw.assignedToId || null,
+    notes: raw.notes?.trim() || null,
+  };
+}
+
+export function EnquiryForm({ teamMembers, mode = "create", enquiry }: EnquiryFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -46,24 +61,14 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
 
   function validateForm(): boolean {
     if (!formRef.current) return false;
-    
-    const formData = new FormData(formRef.current);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Normalize budget to a string for parsing if empty
-    if (!data.budget) {
-      data.budget = "";
-    }
-
-    const result = createEnquirySchema.safeParse(data);
-    
+    const schema = mode === "edit" ? editEnquirySchema : createEnquirySchema;
+    const result = schema.safeParse(readForm(formRef.current));
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
       return false;
-    } else {
-      setErrors({});
-      return true;
     }
+    setErrors({});
+    return true;
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -74,8 +79,8 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
     const elements = formRef.current?.elements;
     if (elements) {
       for (let i = 0; i < elements.length; i++) {
-        const name = (elements[i] as any).name;
-        if (name) newTouched[name] = true;
+        const el = elements[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        if (el.name) newTouched[el.name] = true;
       }
     }
     setTouched(newTouched);
@@ -92,41 +97,40 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
     if (!formRef.current) return;
     setIsSubmitting(true);
     
-    const formData = new FormData(formRef.current);
-    const payload = Object.fromEntries(formData.entries());
-    if (!payload.budget) delete payload.budget;
-    if (!payload.nextFollowUpAt) delete payload.nextFollowUpAt;
-    if (!payload.assignedToId) delete payload.assignedToId;
-    if (!payload.notes) delete payload.notes;
-
-    // Convert budget to integer if present
-    if (payload.budget) {
-      payload.budget = parseInt(payload.budget as string, 10) as any;
+    const parsed = (mode === "edit" ? editEnquirySchema : createEnquirySchema).safeParse(readForm(formRef.current));
+    if (!parsed.success) {
+      setIsSubmitting(false);
+      return;
     }
+    
+    const payload = parsed.data;
 
     try {
-      const res = await fetch("/api/enquiries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await res.json();
-
-      if (res.ok && result.success) {
-        // Success: navigate to the new enquiry
-        router.push(`/enquiries/${result.data.id}`);
-        router.refresh();
-      } else {
-        // Validation or server error
-        if (result.errors) {
-          setErrors(result.errors);
-        } else {
-          setErrors({ _root: [result.message || "Failed to create enquiry"] });
+      if (mode === "edit" && enquiry) {
+        // Find changed fields only (basic comparison)
+        const changed: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(payload)) {
+          if (v !== (enquiry as unknown as Record<string, unknown>)[k]) changed[k] = v;
         }
-        setIsSubmitting(false);
+        
+        const result = await apiPatch<EnquiryDetailDTO>(`/api/enquiries/${enquiry.id}`, changed);
+        if (result.ok) {
+          toast.success("Changes saved");
+          router.push(`/enquiries/${enquiry.id}`);
+          return;
+        }
+        setErrors(result.error.fieldErrors ?? { _root: [result.error.message] });
+      } else {
+        const result = await apiPost<EnquiryDTO>("/api/enquiries", payload);
+        if (result.ok) {
+          toast.success("Enquiry created", { description: result.data.reference });
+          router.push(`/enquiries/${result.data.id}`);
+          return;
+        }
+        setErrors(result.error.fieldErrors ?? { _root: [result.error.message] });
       }
-    } catch (err) {
+      setIsSubmitting(false);
+    } catch {
       setErrors({ _root: ["A network error occurred. Please try again."] });
       setIsSubmitting(false);
     }
@@ -136,7 +140,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
     // Ctrl+Enter or Cmd+Enter to submit
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
-      formRef.current?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+      formRef.current?.requestSubmit();
     }
   }
 
@@ -188,6 +192,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 id="clientName"
                 name="clientName"
                 type="text"
+                defaultValue={enquiry?.clientName}
                 className="input-field"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -203,6 +208,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 id="contactPerson"
                 name="contactPerson"
                 type="text"
+                defaultValue={enquiry?.contactPerson}
                 className="input-field"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -219,6 +225,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                   id="email"
                   name="email"
                   type="email"
+                  defaultValue={enquiry?.email ?? ""}
                   className="input-field"
                   onBlur={handleBlur}
                   onChange={handleChange}
@@ -233,6 +240,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                   id="phone"
                   name="phone"
                   type="tel"
+                  defaultValue={enquiry?.phone ?? ""}
                   className="input-field"
                   onBlur={handleBlur}
                   onChange={handleChange}
@@ -259,6 +267,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 <select
                   id="source"
                   name="source"
+                  defaultValue={enquiry?.source ?? ""}
                   className="input-field"
                   onBlur={handleBlur}
                   onChange={handleChange}
@@ -277,6 +286,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 <select
                   id="service"
                   name="service"
+                  defaultValue={enquiry?.service ?? ""}
                   className="input-field"
                   onBlur={handleBlur}
                   onChange={handleChange}
@@ -298,6 +308,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 id="description"
                 name="description"
                 rows={4}
+                defaultValue={enquiry?.description}
                 className="input-field"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -318,6 +329,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                   type="number"
                   min="0"
                   step="1"
+                  defaultValue={enquiry?.budget ?? ""}
                   className="input-field"
                   style={{ paddingLeft: "32px" }}
                   onBlur={handleBlur}
@@ -346,7 +358,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                   id="status"
                   name="status"
                   className="input-field"
-                  defaultValue="NEW"
+                  defaultValue={enquiry?.status ?? "NEW"}
                   onBlur={handleBlur}
                   onChange={handleChange}
                   aria-invalid={!!(touched.status && errors.status)}
@@ -364,7 +376,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                   id="assignedToId"
                   name="assignedToId"
                   className="input-field"
-                  defaultValue=""
+                  defaultValue={enquiry?.assignedTo?.id ?? ""}
                   onBlur={handleBlur}
                   onChange={handleChange}
                   aria-invalid={!!(touched.assignedToId && errors.assignedToId)}
@@ -385,6 +397,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 id="nextFollowUpAt"
                 name="nextFollowUpAt"
                 type="date"
+                defaultValue={enquiry?.nextFollowUpAt ?? ""}
                 className="input-field"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -400,6 +413,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                 id="notes"
                 name="notes"
                 rows={3}
+                defaultValue={enquiry?.notes ?? ""}
                 className="input-field"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -414,7 +428,7 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
         
         {/* ─── Action Bar ────────────────────────────────────────────────────────── */}
         <div className="form-action-bar">
-          <div className="form-action-hint">Ctrl+Enter to create</div>
+          <div className="form-action-hint">Ctrl+Enter to save</div>
           <div className="form-action-buttons">
             <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={isSubmitting}>
@@ -423,9 +437,9 @@ export function EnquiryForm({ teamMembers }: EnquiryFormProps) {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="spinner">
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
-                  Creating…
+                  Saving…
                 </>
-              ) : "Create enquiry"}
+              ) : mode === "edit" ? "Save changes" : "Create enquiry"}
             </button>
           </div>
         </div>

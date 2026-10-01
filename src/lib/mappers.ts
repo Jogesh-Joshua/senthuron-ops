@@ -10,6 +10,7 @@ import type {
   EnquiryDetailDTO,
   ActivityDTO,
 } from "@/types/dto";
+import { formatReference } from "@/lib/format";
 
 // ─── Types for the Prisma row shapes we accept ────────────────────────────────
 
@@ -43,10 +44,7 @@ type PrismaActivity = {
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
-/** Formats a number as "ENQ-0042" */
-function toReference(n: number): string {
-  return `ENQ-${String(n).padStart(4, "0")}`;
-}
+
 
 /** Formats a Date-only DB value to "YYYY-MM-DD" */
 function toDateString(d: Date | null): string | null {
@@ -62,7 +60,7 @@ export function toEnquiryDTO(row: PrismaEnquiry): EnquiryDTO {
   return {
     id: row.id,
     number: row.number,
-    reference: toReference(row.number),
+    reference: formatReference(row.number),
 
     clientName: row.clientName,
     contactPerson: row.contactPerson,
@@ -91,7 +89,8 @@ export function toEnquiryDTO(row: PrismaEnquiry): EnquiryDTO {
 // ─── Enquiry → List item (omits description & notes) ─────────────────────────
 
 export function toEnquiryListItem(row: PrismaEnquiry): EnquiryListItem {
-  const { description: _d, notes: _n, ...rest } = toEnquiryDTO(row);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { description, notes, ...rest } = toEnquiryDTO(row);
   return rest;
 }
 

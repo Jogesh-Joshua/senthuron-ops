@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTeamMembers } from "@/lib/services/enquiry.service";
+import { listTeamMembers } from "@/lib/services/enquiry.service";
 import { EnquiryForm } from "@/components/enquiries/EnquiryForm";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewEnquiryPage() {
-  const teamMembers = await getTeamMembers();
+  const teamMembers = await listTeamMembers();
 
   return (
     <>

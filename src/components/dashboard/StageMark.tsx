@@ -2,7 +2,7 @@
 // Progressive-fill circle glyph + label per the UI spec §3.5.
 // Pure server component — no interactivity.
 
-import type { EnquiryStatus } from "@/lib/validation/enquiry";
+
 
 const STAGE_CONFIG: Record<string, { color: string; fill: number; cross?: boolean; tick?: boolean }> = {
   NEW:           { color: "#4B5A6B", fill: 0 },

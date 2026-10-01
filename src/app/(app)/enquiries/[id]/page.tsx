@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getEnquiry, getTeamMembers } from "@/lib/services/enquiry.service";
+import { getEnquiry, listTeamMembers } from "@/lib/services/enquiry.service";
 import { StageTrack } from "@/components/enquiries/StageTrack";
 import { HandlingPanel } from "@/components/enquiries/HandlingPanel";
 import { ActivityList } from "@/components/enquiries/ActivityList";
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: EnquiryDetailPageProps): Prom
   try {
     const enquiry = await getEnquiry(id);
     return { title: `${enquiry.clientName} - Senthuron Ops` };
-  } catch (e) {
+  } catch {
     return { title: "Enquiry Not Found" };
   }
 }
@@ -31,10 +31,10 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
   try {
     [enquiry, teamMembers] = await Promise.all([
       getEnquiry(id),
-      getTeamMembers()
+      listTeamMembers()
     ]);
-  } catch (e: any) {
-    if (e.name === "NotFoundError") {
+  } catch (e: unknown) {
+    if (e instanceof Error && e.name === "NotFoundError") {
       notFound();
     }
     throw e;
@@ -49,7 +49,7 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
         <div className="page-header-top" style={{ alignItems: "flex-end" }}>
           <div>
             <p className="page-eyebrow" aria-hidden="true">
-              <Link href="/enquiries" className="breadcrumb-link">ENQUIRIES</Link> / {enquiry.id.toUpperCase()}
+              <Link href="/enquiries" className="breadcrumb-link">ENQUIRIES</Link> / {enquiry.reference}
             </p>
             <h1 className="page-title">{enquiry.clientName}</h1>
             <p className="page-contact-person" style={{ color: "var(--color-ink-2)", fontSize: "16px", marginTop: "4px" }}>

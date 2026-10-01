@@ -2,6 +2,7 @@
 // Desktop sidebar — server component (NavLink handles client pathname read).
 
 import Link from "next/link";
+import Image from "next/image";
 import { NavLink } from "./NavLink";
 import { prisma } from "@/lib/db";
 import { OPEN_STATUSES } from "@/lib/constants";
@@ -26,13 +27,7 @@ export async function Sidebar() {
       {/* Wordmark */}
       <div className="sidebar-wordmark">
         <Link href="/" className="sidebar-logo" aria-label="Senthuron Ops — go to Dashboard">
-          {/* SVG mark: outlined square with three horizontal rules */}
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <rect x="1" y="1" width="18" height="18" rx="2" stroke="var(--color-ink)" strokeWidth="1.5"/>
-            <line x1="4" y1="6" x2="16" y2="6" stroke="var(--color-ink)" strokeWidth="1.2"/>
-            <line x1="4" y1="10" x2="16" y2="10" stroke="var(--color-brand)" strokeWidth="1.5"/>
-            <line x1="4" y1="14" x2="16" y2="14" stroke="var(--color-ink)" strokeWidth="1.2"/>
-          </svg>
+          <Image src="/logo.svg" alt="Senthuron Logo" width={24} height={24} style={{ width: "auto", height: "auto" }} priority aria-hidden="true" />
           <span className="sidebar-wordmark-text">
             <span className="sidebar-brand-name">Senthuron</span>
             <span className="sidebar-brand-ops">OPS</span>
