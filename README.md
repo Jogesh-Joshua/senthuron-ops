@@ -130,12 +130,12 @@ To run this project locally, ensure you have Node.js (v20+) and an active Postgr
 |----------|---------|----------|
 | `DATABASE_URL` | Primary connection string for the PostgreSQL database (used by Prisma). | Yes |
 | `DIRECT_URL` | Direct, non-pooled connection string used specifically for Prisma migrations. | Optional |
-| `APP_TIMEZONE` | The business timezone for calculating "today" and formatting dates (defaults to `Asia/Kolkata`). | No |
+| `APP_TIMEZONE` | The business timezone for calculating "today" and formatting dates (defaults to `Asia/Kolkata`). | Optional |
 | `NODE_ENV` | Application environment state (`development`, `test`, `production`). | No |
 | `BETTER_AUTH_SECRET` | Secret key used to sign and encrypt session tokens. | Yes |
 | `BETTER_AUTH_URL` | Base URL of the application for authentication redirects (e.g., `http://localhost:3000`). | Yes |
-| `GOOGLE_CLIENT_ID` | OAuth Client ID for Google Sign-In integration. | No |
-| `GOOGLE_CLIENT_SECRET` | OAuth Client Secret for Google Sign-In integration. | No |
+| `GOOGLE_CLIENT_ID` | OAuth Client ID for Google Sign-In integration. | Yes |
+| `GOOGLE_CLIENT_SECRET` | OAuth Client Secret for Google Sign-In integration. | Yes |
 
 ## 11. Demo / Hosted URL
 [Open Senthuron Ops](https://senthuron-ops.vercel.app/)
