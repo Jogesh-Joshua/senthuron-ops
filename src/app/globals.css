@@ -1310,14 +1310,8 @@ body {
   border-bottom: 1px solid var(--color-rule-strong);
   background: var(--color-paper);
   position: sticky;
-  top: 52px; /* below mobile topbar height */
+  top: 0;
   z-index: 10;
-}
-
-@media (min-width: 1024px) {
-  .table th {
-    top: 0; /* no topbar on desktop */
-  }
 }
 
 .table td {
