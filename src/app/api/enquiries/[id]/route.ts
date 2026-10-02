@@ -42,3 +42,5 @@ export const PATCH = withErrorHandling(async (req, ctx) => {
   const enquiry = await updateEnquiry(id, input, actor);
   return ok(enquiry);
 });
+
+export const PUT = PATCH;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { EnquiryDetailDTO } from "@/types/dto";
+import { BUSINESS_TIMEZONE, STATUS_LABELS } from "@/lib/constants";
 
 interface ActivityListProps {
   activities: EnquiryDetailDTO["activities"];
@@ -9,7 +10,13 @@ interface ActivityListProps {
 
 function formatRelativeTime(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: BUSINESS_TIMEZONE });
+}
+
+function formatFollowUpDate(dateStr: string) {
+  const d = new Date(dateStr);
+  // date string is YYYY-MM-DD, parse as UTC midnight to avoid local tz shifts
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
 export function ActivityList({ activities }: ActivityListProps) {
@@ -38,10 +45,10 @@ export function ActivityList({ activities }: ActivityListProps) {
           <div className="activity-content">
             <span className="activity-text">
               {act.type === "CREATED" && "Enquiry created"}
-              {act.type === "STATUS_CHANGED" && `Status changed from ${act.fromValue || 'New'} to ${act.toValue}`}
+              {act.type === "STATUS_CHANGED" && `Status changed from ${STATUS_LABELS[(act.fromValue as keyof typeof STATUS_LABELS) || 'NEW']} to ${STATUS_LABELS[act.toValue as keyof typeof STATUS_LABELS]}`}
               {act.type === "ASSIGNEE_CHANGED" && (act.toValue ? `Assigned to ${act.toValue}` : "Unassigned")}
-              {act.type === "FOLLOW_UP_CHANGED" && (act.toValue ? `Follow-up set to ${act.toValue}` : "Follow-up cleared")}
-              {act.type === "DETAILS_UPDATED" && (act.note || "Details updated")}
+              {act.type === "FOLLOW_UP_CHANGED" && (act.toValue ? `Follow-up set to ${formatFollowUpDate(act.toValue)}` : "Follow-up cleared")}
+              {act.type === "DETAILS_UPDATED" && (act.note ? `Details updated: ${act.note}` : "Details updated")}
               {act.actorName && ` by ${act.actorName}`}
             </span>
             <span className="activity-time">{formatRelativeTime(act.createdAt)}</span>

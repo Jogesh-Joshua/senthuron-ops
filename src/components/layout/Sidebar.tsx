@@ -7,6 +7,7 @@ import { NavLink } from "./NavLink";
 import { prisma } from "@/lib/db";
 import { OPEN_STATUSES } from "@/lib/constants";
 import { AuthControl } from "../auth/AuthControl";
+import { RequireAuthLink } from "../auth/RequireAuthLink";
 
 // Fetch open count for the Enquiries nav badge
 async function getOpenCount(): Promise<number> {
@@ -75,13 +76,13 @@ export async function Sidebar() {
 
       {/* New enquiry — secondary so the page header primary stands alone */}
       <div className="sidebar-new">
-        <Link href="/enquiries/new" className="btn-secondary sidebar-new-btn">
+        <RequireAuthLink href="/enquiries/new" className="btn-secondary sidebar-new-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           New enquiry
-        </Link>
+        </RequireAuthLink>
       </div>
 
       {/* Footer */}

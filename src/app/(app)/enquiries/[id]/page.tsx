@@ -18,9 +18,9 @@ export async function generateMetadata({ params }: EnquiryDetailPageProps): Prom
   const { id } = await params;
   try {
     const enquiry = await getEnquiry(id);
-    return { title: `${enquiry.clientName} - Senthuron Ops` };
+    return { title: enquiry.clientName, robots: { index: false } };
   } catch {
-    return { title: "Enquiry Not Found" };
+    return { title: "Enquiry Not Found", robots: { index: false } };
   }
 }
 

@@ -10,7 +10,7 @@ import { RequireAuthLink } from "@/components/auth/RequireAuthLink";
 import { getDashboardData } from "@/lib/services/dashboard.service";
 import { FollowUpChip } from "@/components/dashboard/FollowUpChip";
 import { StageMark } from "@/components/dashboard/StageMark";
-import { SOURCE_LABELS, STATUS_LABELS } from "@/lib/constants";
+import { SOURCE_LABELS, STATUS_LABELS, BUSINESS_TIMEZONE } from "@/lib/constants";
 import { formatCompactCurrency, getInitials } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -24,19 +24,26 @@ export const metadata: Metadata = {
 function formatDate(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
-  const today = now.toDateString();
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = yesterday.toDateString();
-  const dayLabel = d.toDateString() === today
+  
+  const compareFmt = new Intl.DateTimeFormat("en-GB", { timeZone: BUSINESS_TIMEZONE });
+  const todayStr = compareFmt.format(now);
+  
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayStr = compareFmt.format(yesterday);
+  
+  const dStr = compareFmt.format(d);
+  
+  const dayLabel = dStr === todayStr
     ? "Today"
-    : d.toDateString() === yStr
+    : dStr === yesterdayStr
       ? "Yesterday"
-      : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+      : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: BUSINESS_TIMEZONE });
+      
   const time = d.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: BUSINESS_TIMEZONE,
   });
   return `${dayLabel} ${time}`;
 }
