@@ -1,30 +1,6 @@
 import type { Metadata } from "next";
-import { Newsreader, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
-
-// ─── Fonts ────────────────────────────────────────────────────────────────────
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  variable: "--font-plex-sans",
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  variable: "--font-plex-mono",
-  weight: ["400", "500"],
-  display: "swap",
-});
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
@@ -47,10 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${newsreader.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
-    >
+    <html lang="en">
       <body>
         {/* Skip-to-content link for keyboard and assistive tech users */}
         <a
