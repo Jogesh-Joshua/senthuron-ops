@@ -7,7 +7,7 @@ Senthuron Ops
 Jogesh Joshua
 
 ## 3. Selected Track
-Full Stack
+A - Full Stack
 
 ## 4. Project Overview
 Senthuron Ops is a centralized business operations and client enquiry management web application. It empowers the Senthuron Tech team to capture, manage, and track incoming leads and client requests across a structured lifecycle, offering a single source of truth for all business opportunities and follow-ups.
