@@ -42,6 +42,7 @@ export function ActivityList({ activities }: ActivityListProps) {
               {act.type === "ASSIGNEE_CHANGED" && (act.toValue ? `Assigned to ${act.toValue}` : "Unassigned")}
               {act.type === "FOLLOW_UP_CHANGED" && (act.toValue ? `Follow-up set to ${act.toValue}` : "Follow-up cleared")}
               {act.type === "DETAILS_UPDATED" && (act.note || "Details updated")}
+              {act.actorName && ` by ${act.actorName}`}
             </span>
             <span className="activity-time">{formatRelativeTime(act.createdAt)}</span>
             {act.type === "STATUS_CHANGED" && act.note && (

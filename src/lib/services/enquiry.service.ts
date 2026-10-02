@@ -59,6 +59,7 @@ const ENQUIRY_DETAIL_SELECT = {
       toValue: true,
       note: true,
       createdAt: true,
+      actorName: true,
     },
     orderBy: { createdAt: "desc" as const },
     take: 50,
@@ -259,7 +260,9 @@ export async function getEnquiry(id: string): Promise<EnquiryDetailDTO> {
  * Validates that assignedToId refers to a real team member.
  * Writes a CREATED activity in the same transaction.
  */
-export async function createEnquiry(input: CreateEnquiryInput): Promise<EnquiryDTO> {
+export type Actor = { id: string; name: string };
+
+export async function createEnquiry(input: CreateEnquiryInput, actor: Actor): Promise<EnquiryDTO> {
   // Validate assignee exists
   if (input.assignedToId) {
     const member = await prisma.teamMember.findUnique({
@@ -302,6 +305,8 @@ export async function createEnquiry(input: CreateEnquiryInput): Promise<EnquiryD
       data: {
         enquiryId: enquiry.id,
         type: "CREATED",
+        actorId: actor.id,
+        actorName: actor.name,
       },
     });
 
@@ -318,7 +323,8 @@ export async function createEnquiry(input: CreateEnquiryInput): Promise<EnquiryD
  */
 export async function updateEnquiry(
   id: string,
-  input: UpdateEnquiryInput
+  input: UpdateEnquiryInput,
+  actor: Actor
 ): Promise<EnquiryDTO> {
   const updatedRow = await prisma.$transaction(async (tx) => {
     // Load current record
@@ -475,7 +481,12 @@ export async function updateEnquiry(
     });
 
     if (activitiesToCreate.length > 0) {
-      await tx.enquiryActivity.createMany({ data: activitiesToCreate });
+      const withActor = activitiesToCreate.map(a => ({
+        ...a,
+        actorId: actor.id,
+        actorName: actor.name,
+      }));
+      await tx.enquiryActivity.createMany({ data: withActor });
     }
 
     return enquiry;

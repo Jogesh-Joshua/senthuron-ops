@@ -25,6 +25,12 @@ export class ForbiddenOriginError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message = "Please sign in to make changes.") {
+    super("UNAUTHENTICATED", 401, message);
+  }
+}
+
 export class NotFoundError extends AppError {
   constructor(message = "Not found") {
     super("NOT_FOUND", 404, message);

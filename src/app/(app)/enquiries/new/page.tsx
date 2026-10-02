@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { listTeamMembers } from "@/lib/services/enquiry.service";
 import { EnquiryForm } from "@/components/enquiries/EnquiryForm";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth-guard";
 
 export const metadata: Metadata = {
   title: "New Enquiry",
@@ -9,6 +11,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function NewEnquiryPage() {
+  const user = await getSessionUser();
+  if (!user) redirect("/");
+
   const teamMembers = await listTeamMembers();
 
   return (

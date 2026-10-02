@@ -40,6 +40,7 @@ type PrismaActivity = {
   toValue: string | null;
   note: string | null;
   createdAt: Date;
+  actorName?: string | null;
 };
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
@@ -115,5 +116,6 @@ export function toActivityDTO(row: PrismaActivity): ActivityDTO {
     toValue: row.toValue,
     note: row.note,
     createdAt: row.createdAt.toISOString(),
+    actorName: row.actorName ?? null,
   };
 }

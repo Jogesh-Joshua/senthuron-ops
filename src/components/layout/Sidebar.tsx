@@ -6,6 +6,7 @@ import Image from "next/image";
 import { NavLink } from "./NavLink";
 import { prisma } from "@/lib/db";
 import { OPEN_STATUSES } from "@/lib/constants";
+import { AuthControl } from "../auth/AuthControl";
 
 // Fetch open count for the Enquiries nav badge
 async function getOpenCount(): Promise<number> {
@@ -86,6 +87,7 @@ export async function Sidebar() {
       {/* Footer */}
       <div className="sidebar-footer">
         <p className="sidebar-footer-brand">Senthuron Tech</p>
+        <AuthControl />
       </div>
     </aside>
   );

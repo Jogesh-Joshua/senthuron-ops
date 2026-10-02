@@ -5,6 +5,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { AuthControl } from "../auth/AuthControl";
+import { RequireAuthLink } from "../auth/RequireAuthLink";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -24,13 +26,16 @@ export function MobileNav() {
           <Image src="/logo.svg" alt="Senthuron Logo" width={24} height={24} style={{ width: "auto", height: "auto" }} priority aria-hidden="true" />
           <span className="mobile-wordmark-text">Senthuron Ops</span>
         </Link>
-        <Link href="/enquiries/new" className="btn-secondary btn-sm" aria-label="Create new enquiry">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          <span className="mobile-new-label">New</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <RequireAuthLink href="/enquiries/new" className="btn-secondary btn-sm" aria-label="Create new enquiry">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span className="mobile-new-label">New</span>
+          </RequireAuthLink>
+          <AuthControl />
+        </div>
       </header>
 
       {/* Bottom tab bar */}
@@ -64,10 +69,9 @@ export function MobileNav() {
             <span>Enquiries</span>
           </Link>
 
-          <Link
+          <RequireAuthLink
             href="/enquiries/new"
             className={`mobile-tab ${isNew ? "mobile-tab--active" : ""}`}
-            aria-current={isNew ? "page" : undefined}
             aria-label="New enquiry"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -76,7 +80,7 @@ export function MobileNav() {
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
             <span>New</span>
-          </Link>
+          </RequireAuthLink>
         </nav>
       )}
     </>

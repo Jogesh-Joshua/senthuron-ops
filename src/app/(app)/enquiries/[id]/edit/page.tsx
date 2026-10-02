@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getEnquiry, listTeamMembers } from "@/lib/services/enquiry.service";
 import { EnquiryForm } from "@/components/enquiries/EnquiryForm";
+import { getSessionUser } from "@/lib/auth-guard";
 
 export const metadata: Metadata = {
   title: "Edit Enquiry",
@@ -10,7 +11,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function EditEnquiryPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUser();
   const { id } = await params;
+  if (!user) {
+    notFound(); // or redirect
+  }
   const [enquiry, teamMembers] = await Promise.all([
     getEnquiry(id).catch((e) => {
       if (e?.name === "NotFoundError") notFound();

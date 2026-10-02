@@ -6,6 +6,8 @@ import { STATUS_LABELS } from "@/lib/constants";
 import type { EnquiryDetailDTO } from "@/types/dto";
 import { toast } from "sonner";
 import { apiPatch } from "@/lib/api-client";
+import { useAuth } from "../auth/AuthProvider";
+import { SignInRequired } from "../auth/SignInRequired";
 
 interface TeamMember {
   id: string;
@@ -19,6 +21,8 @@ interface HandlingPanelProps {
 
 export function HandlingPanel({ enquiry, teamMembers }: HandlingPanelProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const readOnly = !user;
   
   const [status, setStatus] = useState(enquiry.status);
   const [assignedToId, setAssignedToId] = useState(enquiry.assignedTo?.id || "");
@@ -83,6 +87,7 @@ export function HandlingPanel({ enquiry, teamMembers }: HandlingPanelProps) {
             id="handling-status"
             className="input-field"
             value={status}
+            disabled={readOnly}
             onChange={(e) => updateField("status", e.target.value, status)}
           >
             {Object.entries(STATUS_LABELS).map(([val, label]) => (
@@ -105,6 +110,7 @@ export function HandlingPanel({ enquiry, teamMembers }: HandlingPanelProps) {
             id="handling-assignee"
             className="input-field"
             value={assignedToId}
+            disabled={readOnly}
             onChange={(e) => updateField("assignedToId", e.target.value, assignedToId)}
           >
             <option value="">Unassigned</option>
@@ -129,7 +135,7 @@ export function HandlingPanel({ enquiry, teamMembers }: HandlingPanelProps) {
             id="handling-followup"
             className="input-field"
             value={nextFollowUpAt}
-            disabled={isClosed}
+            disabled={isClosed || readOnly}
             onChange={(e) => updateField("nextFollowUpAt", e.target.value, nextFollowUpAt)}
           />
           {isClosed && <p className="handling-helper">Not needed for closed enquiries.</p>}
@@ -160,6 +166,7 @@ export function HandlingPanel({ enquiry, teamMembers }: HandlingPanelProps) {
           </div>
         </div>
       </div>
+      {!user && <SignInRequired />}
     </div>
   );
 }

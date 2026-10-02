@@ -5,6 +5,7 @@
 import { withErrorHandling, ok, fail, readJson } from "@/lib/api-response";
 import { listEnquiries, createEnquiry } from "@/lib/services/enquiry.service";
 import { listQuerySchema, createEnquirySchema } from "@/lib/validation/enquiry";
+import { requireUser } from "@/lib/auth-guard";
 
 // ─── GET /api/enquiries ────────────────────────────────────────────────────────
 
@@ -34,7 +35,8 @@ export const GET = withErrorHandling(async (req) => {
 // ─── POST /api/enquiries ───────────────────────────────────────────────────────
 
 export const POST = withErrorHandling(async (req) => {
+  const actor = await requireUser(req);
   const input = createEnquirySchema.parse(await readJson(req));
-  const enquiry = await createEnquiry(input);
+  const enquiry = await createEnquiry(input, actor);
   return ok(enquiry, 201);
 });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getEnquiry, listTeamMembers } from "@/lib/services/enquiry.service";
 import { StageTrack } from "@/components/enquiries/StageTrack";
 import { HandlingPanel } from "@/components/enquiries/HandlingPanel";
+import { RequireAuthLink } from "@/components/auth/RequireAuthLink";
 import { ActivityList } from "@/components/enquiries/ActivityList";
 import { SERVICE_LABELS } from "@/lib/constants";
 
@@ -57,9 +58,9 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
             </p>
           </div>
           <div style={{ marginBottom: "6px" }}>
-            <Link href={`/enquiries/${enquiry.id}/edit`} className="btn-secondary">
+            <RequireAuthLink href={`/enquiries/${enquiry.id}/edit`} className="btn-secondary">
               Edit
-            </Link>
+            </RequireAuthLink>
           </div>
         </div>
         <div className="masthead-rule" role="presentation" />
@@ -112,7 +113,7 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
               <p className="detail-description">{enquiry.notes}</p>
             ) : (
               <p className="empty-body" style={{ textAlign: "left", margin: 0 }}>
-                No notes. <Link href={`/enquiries/${enquiry.id}/edit`} className="text-brand">Add</Link>
+                No notes. <RequireAuthLink href={`/enquiries/${enquiry.id}/edit`} className="text-brand">Add</RequireAuthLink>
               </p>
             )}
           </section>

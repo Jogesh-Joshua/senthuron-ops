@@ -5,6 +5,7 @@ import { listEnquiries, listTeamMembers } from "@/lib/services/enquiry.service";
 import { parseListQuery } from "@/lib/validation/enquiry";
 import { StatusStrip } from "@/components/enquiries/StatusStrip";
 import { EnquiryFilters } from "@/components/enquiries/EnquiryFilters";
+import { RequireAuthLink } from "@/components/auth/RequireAuthLink";
 import { EnquiryTable } from "@/components/enquiries/EnquiryTable";
 import { EnquiryPagination } from "@/components/enquiries/EnquiryPagination";
 
@@ -78,12 +79,12 @@ export default async function EnquiriesPage({ searchParams }: EnquiriesPageProps
             <span style={{ fontSize: "14px", color: "var(--color-ink-3)", fontVariantNumeric: "tabular-nums" }}>
               {headerTotal}
             </span>
-            <Link href="/enquiries/new" className="btn-primary">
+            <RequireAuthLink href="/enquiries/new" className="btn-primary">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               New enquiry
-            </Link>
+            </RequireAuthLink>
           </div>
         </div>
         <div className="masthead-rule" role="presentation" />

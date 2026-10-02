@@ -23,6 +23,7 @@ export interface ActivityDTO {
   toValue: string | null;
   note: string | null;
   createdAt: string; // ISO timestamp
+  actorName: string | null;
 }
 
 // ─── Enquiry DTO (full record) ────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
 } from "@/lib/api-response";
 import { getEnquiry, updateEnquiry } from "@/lib/services/enquiry.service";
 import { updateEnquirySchema } from "@/lib/validation/enquiry";
+import { requireUser } from "@/lib/auth-guard";
 
 // ─── GET /api/enquiries/[id] ──────────────────────────────────────────────────
 
@@ -36,7 +37,8 @@ export const PATCH = withErrorHandling(async (req, ctx) => {
     return fail("NOT_FOUND", "Enquiry not found.", 404);
   }
 
+  const actor = await requireUser(req);
   const input = updateEnquirySchema.parse(await readJson(req));
-  const enquiry = await updateEnquiry(id, input);
+  const enquiry = await updateEnquiry(id, input, actor);
   return ok(enquiry);
 });
